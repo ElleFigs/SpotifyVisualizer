@@ -1,0 +1,34 @@
+User Story 1: Display Song Information
+Description:
+As a user, I want to see detailed information about the currently playing song, including its name, artist, album, length, key, BPM (Beats Per Minute), and mood.
+
+Acceptance Criteria:
+When I access the visualizer application, I should be able to view the song's information on the user interface.
+
+The following attributes of the currently playing song should be displayed:
+
+Song Name
+Artist Name
+Album Name
+Song Length (Duration)
+Key
+BPM (Beats Per Minute)
+Mood
+The displayed song information should be updated in real-time as the song changes.
+
+API Endpoints:
+To retrieve the required song information, the application will make use of the following Spotify API endpoints:
+
+Get Currently Playing Track:
+
+Endpoint: https://api.spotify.com/v1/me/player/currently-playing
+Description: This endpoint returns the details of the currently playing track, including its name, artist, album, and other metadata.
+Audio Analysis:
+
+Endpoint: https://api.spotify.com/v1/audio-analysis/{track_id}
+Description: This endpoint provides detailed audio analysis data for a given track, including key, BPM, and mood.
+OAuth Scope Requirements:
+To access the required Spotify API endpoints and retrieve song information on behalf of the user, the application will need the following OAuth scope:
+
+user-read-currently-playing: This scope allows the application to access the user's currently playing track information.
+user-read-private: This scope is required to access the user's private data, which includes song details like BPM and mood.
