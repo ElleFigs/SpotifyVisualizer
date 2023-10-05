@@ -1,7 +1,7 @@
 from app import db
 
 class SongModel(db.Model):
-    id = db.Column(db.String, primary_key = True)
+    song_id = db.Column(db.String, primary_key = True)
     song_name = db.Column(db.String(100), nullable=False)
     artist_name = db.Column(db.String(100), nullable=True)
     album_name = db.Column(db.String(100), nullable=True)

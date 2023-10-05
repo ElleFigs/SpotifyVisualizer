@@ -149,8 +149,7 @@ def GetTrackInfo():
         put_response = requests.put(BASE + link, data=track_info_json, headers=headers)
 
         # this will probably change to returning a response code once I am further on in the project
-        print(str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['aritst_name']} Length: {track_info['length']}"))
-        return jsonify({'content': str(put_response.status_code)})
+        return str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['aritst_name']} Length: {track_info['length']}")
     else:
         return jsonify({'error': 'Nothing is currently playing'})
 

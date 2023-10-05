@@ -5,15 +5,17 @@ import time
 import requests
 import json
 import spotipy
+import private
 from spotipy.oauth2 import SpotifyOAuth
+from sqlalchemy.exc import IntegrityError
 
-from app import app, api
+
+from app import app, api, db, Session
 from resources import add_song, get_song
 from models import SongModel
 
 TOKEN_INFO = 'TOKEN_INFO'
 
-# Define your routes and route handlers here
 @app.route('/')
 def login():
     auth_url = create_spotify_oauth().get_authorize_url()
@@ -37,9 +39,8 @@ def GetTrackInfo():
     
     sp = spotipy.Spotify(auth=token_info['access_token'])
     results = sp.current_playback()
-    if results:
 
-        ## code here to query the previous song and mark currently_playing to false
+    if results:
 
         song_id = results['item']['id']
         song_name = results['item']['name']
@@ -49,25 +50,56 @@ def GetTrackInfo():
         length = results['item']['duration_ms']
 
         track_info = {
-            'id' : str(song_id),
+            'song_id' : str(song_id),
             'song_name': str(song_name),
             'album_name' : str(album_name),
-            'aritst_name' : str(artist_name),
+            'artist_name' : str(artist_name),
             'length' : str(length),
             'currently_playing': True
         }
         # Add song info to database
-        link = (f'song/add/{str(track_info["id"])}')
-        link = (f'song/add/')
+        session = Session()
 
-        BASE = "http://127.0.0.1:5000/"
-        headers = {'Content-Type': 'application/json'}
-        track_info_json = json.dumps(track_info)
-        put_response = requests.put(BASE + link, data=track_info_json, headers=headers)
+        try:
+            currently_playing_songs = session.query(SongModel).filter(SongModel.currently_playing == True).all()
+            if currently_playing_songs:
+                for song in currently_playing_songs:
+                    song.currently_playing = False
 
-        # this will probably change to returning a response code once I am further on in the project
-        print(str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['aritst_name']} Length: {track_info['length']}"))
-        return jsonify({'content': str(put_response.status_code)})
+            
+            # Add song info to database within the session
+            new_song = SongModel(
+                song_id=track_info['song_id'],
+                song_name=track_info['song_name'],
+                artist_name=track_info['artist_name'],
+                album_name=track_info['album_name'],
+                length=track_info['length'],
+                currently_playing = True
+            )
+
+            # Commit the changes to the database
+            session.add(new_song)
+            session.commit()
+
+            print(str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['artist_name']} Length: {track_info['length']}"))
+
+            # Close the session
+            session.close()
+
+            return str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['artist_name']} Length: {track_info['length']}")
+        
+        except IntegrityError as e:
+            # Handle the IntegrityError (UNIQUE constraint violation)
+            print(f"IntegrityError: {e}")
+            session.rollback()
+            return jsonify({'error': 'A song with the same song_id already exists in the database'})
+
+        except Exception as e:
+            # Handle other exceptions that may occur during database operations
+            print(f"Error: {e}")
+            session.rollback()
+            return jsonify({'error': 'An error occurred while adding the song to the database'})
+
     else:
         return jsonify({'error': 'Nothing is currently playing'})
 
@@ -84,8 +116,8 @@ def get_token():
     return token_info
 
 def create_spotify_oauth():
-    return SpotifyOAuth(client_id = client_id, 
-                        client_secret = client_secret,
+    return SpotifyOAuth(client_id = private.CLIENT_ID, 
+                        client_secret = private.CLIENT_SECRET,
                         redirect_uri = url_for('redirect_page', _external=True),
                         scope = 'user-read-private user-read-currently-playing user-read-playback-state'
                         )
