@@ -20,6 +20,22 @@ resource_fields = {
     'currently_playing': fields.Boolean
 }
 
+analysis_fields = {
+    'song_id' : fields.String,
+    'song_name' : fields.String,
+    'acousticness' : fields.Float,
+    'danceability' : fields.Float,
+    'duration_ms' :  fields.Float,
+    'energy' : fields.Float,
+    'instrumentalness' : fields.Float,
+    'key' : fields.Integer,
+    'liveness' : fields.Float,
+    'loudness' : fields.Float,
+    'speechiness' : fields.Float,
+    'tempo' : fields.Float,
+    'time_signature' : fields.Integer
+}
+
 class add_song(Resource):
     @marshal_with(resource_fields)
     def put(self):
@@ -57,7 +73,18 @@ class get_currently_playing(Resource):
                 result = SongModel.query.filter(SongModel.currently_playing==True).first()
             session.close()
         return result
+     
+class get_25_recent_song_features(Resource):
+    @marshal_with(analysis_fields)
+    def get(self):
+        session = Session()
+        with app.app_context():
+                with db.session() as session:
+                    result = AudioAnalysis.query.all()
+                session.close()
+        return result
 # here we add an endpoints for the song class
 api.add_resource(add_song, "/song/add/")
 api.add_resource(get_song, "/song/info/<string:song_id>")
 api.add_resource(get_currently_playing, "/song/currentlyplaying/")
+api.add_resource(get_25_recent_song_features, "/song/recent/")
