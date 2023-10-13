@@ -1,0 +1,9 @@
+1. Update /GetTrackInfo to store currently playing song in the AudioAnalysis model. To do this add necessary fields to the model
+   so that song_name, artist_name, album_name, and currently_playing can be tracked
+2. Add audio_features to the /song/currentlyplaying/ resource.
+
+acceptance criteria:
+
+able to call /song/currentlyplaying/ and return a json string or similar that contains song_name, artist_name, and all audio_features 
+fields
+
