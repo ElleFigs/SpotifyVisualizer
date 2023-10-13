@@ -1,0 +1,10 @@
+1. Make bar graph on dashboard update with 5 new songs and their associated acousticness every 'x' seconds.
+3. update bar chart to change based on the currently_playing songs bpm
+
+Acceptance criteria:
+
+when the dashboard is opened in the browser AND music is playing on spotify:
+1. the header will name the song, artist, and album. 
+2. The bar chart will display 5 random songs from the db and their acousticness level
+3. the bar chart will updatem with 5 new songs randomly on quarter, half, or whole notes
+4. the header will change once a new song starts playing

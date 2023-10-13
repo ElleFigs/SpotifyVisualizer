@@ -65,12 +65,12 @@ class get_song(Resource):
         return result
 
 class get_currently_playing(Resource):
-     @marshal_with(resource_fields)
+     @marshal_with(analysis_fields)
      def get(self):
         session = Session()
         with app.app_context():
             with db.session() as session:
-                result = SongModel.query.filter(SongModel.currently_playing==True).first()
+                result = AudioAnalysis.query.filter(AudioAnalysis.currently_playing==True).first()
             session.close()
         return result
      

@@ -14,6 +14,8 @@ class SongModel(db.Model):
 class AudioAnalysis(db.Model):
     song_id = db.Column(db.String, primary_key = True)
     song_name = db.Column(db.String(100), nullable=False)
+    artist_name = db.Column(db.String(100), nullable=False)
+    album_name = db.Column(db.String(100), nullable=False)
     acousticness = db.Column(db.Float, nullable=False)
     danceability = db.Column(db.Float, nullable=False)
     duration_ms = db.Column(db.Float, nullable=False) 
@@ -25,4 +27,5 @@ class AudioAnalysis(db.Model):
     speechiness = db.Column(db.Float, nullable=False)
     tempo = db.Column(db.Float, nullable=False)
     time_signature = db.Column(db.Integer, nullable=False)
+    currently_playing = db.Column(db.Boolean, nullable=False)
     

@@ -196,45 +196,64 @@ def GetTrackInfo():
 
         song_id = current_playback['item']['id']
 
-        if not session.query(SongModel).filter(SongModel.song_id == song_id).first():
+        if not session.query(AudioAnalysis).filter(AudioAnalysis.song_id == song_id).first():
 
             song_name = current_playback['item']['name']
-            album_id = current_playback['item']['album']['id']
             album_name = current_playback['item']['album']['name']
             artist_name = current_playback['item']['artists'][0]['name']
-            length = current_playback['item']['duration_ms']
+            audio_feature = sp.audio_features(song_id)
+            audio_feature = audio_feature[0]
 
             track_info = {
-                'song_id' : str(song_id),
-                'song_name': str(song_name),
-                'album_name' : str(album_name),
-                'artist_name' : str(artist_name),
-                'length' : str(length),
-                'currently_playing': True
-            }            
+                    'song_name' : song_name,
+                    'album_name' : album_name,
+                    'artist_name' : artist_name,
+                    'song_id' : song_id,
+                    'acousticness' : audio_feature['acousticness'],
+                    'danceability' : audio_feature['danceability'],
+                    'duration_ms' : audio_feature['duration_ms'],
+                    'energy' : audio_feature['energy'],
+                    'instrumentalness' : audio_feature['instrumentalness'],
+                    'key' : audio_feature['key'],
+                    'liveness' : audio_feature['liveness'],
+                    'loudness' : audio_feature['loudness'],
+                    'speechiness' : audio_feature['speechiness'],
+                    'tempo' : audio_feature['tempo'],
+                    'time_signature' : audio_feature['time_signature']
+                }           
 
             try:
-                currently_playing_songs = session.query(SongModel).filter(SongModel.currently_playing == True).all()
+                currently_playing_songs = session.query(AudioAnalysis).filter(AudioAnalysis.currently_playing == True).all()
                 if currently_playing_songs:
                     for song in currently_playing_songs:
                         song.currently_playing = False
 
                 
-                new_song = SongModel(
-                    song_id=track_info['song_id'],
-                    song_name=track_info['song_name'],
-                    artist_name=track_info['artist_name'],
-                    album_name=track_info['album_name'],
-                    length=track_info['length'],
+                new_song = AudioAnalysis(
+                    song_id = track_info['song_id'],
+                    song_name = track_info['song_name'],
+                    artist_name = track_info['artist_name'],
+                    album_name = track_info['album_name'],
+                    acousticness = track_info['acousticness'],
+                    danceability = track_info['danceability'],
+                    duration_ms = track_info['duration_ms'], 
+                    energy = track_info['energy'],
+                    instrumentalness = track_info['instrumentalness'],
+                    key = track_info['key'],
+                    liveness = track_info['liveness'],
+                    loudness = track_info['loudness'],
+                    speechiness = track_info['speechiness'],
+                    tempo = track_info['tempo'],
+                    time_signature = track_info['time_signature'],
                     currently_playing = True
                 )
 
                 session.add(new_song)
                 session.commit()
 
-                print(str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['artist_name']} Length: {int(length) / 1000} seconds"))
+                print(str(f"Song: {track_info['song_name']} Album: {track_info['album_name']} Artist: {track_info['artist_name']} Length: {int(track_info['duration_ms']) / 1000} seconds"))
 
-                length = int(length)
+                length = int(track_info['duration_ms'])
                 progress = int(current_playback['progress_ms'])
                 sleep_time = (length - progress) / 1000
 
