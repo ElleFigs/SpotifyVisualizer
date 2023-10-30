@@ -67,8 +67,9 @@ def create_recent_25_playlist():
         if 'Recent 25 Tracks' in playlist_info:
             recent_25_playlist_exists = True
             recent_25_playlist_id = playlist_info['Recent 25 Tracks']
-                
-        return recent_25_playlist_exists, recent_25_playlist_id
+            return recent_25_playlist_exists, recent_25_playlist_id
+        else:
+            return recent_25_playlist_exists, False
     
     def get_recent_25_tracks():
         tracks = sp.current_user_recently_played(limit = 25)['items']
@@ -121,18 +122,31 @@ def recent_25_features_to_db():
         for track in recent_25_playlist['tracks']['items']:
             track_ids.append(track['track']['id'])
 
+        tracks_features = sp.tracks(track_ids)
         audio_features = sp.audio_features(track_ids)
+        print(f'Audio Features : {type(audio_features)}')
+        print(f'Track Features : {type(tracks_features)}')
+        # print(tracks_features['tracks'][0]['album']['name'])
+        # print(tracks_features['tracks'][0]['artists'][0]['name'])
 
         for song in recent_25_playlist['tracks']['items']:
             song_id = song['track']['id']
             song_name = song['track']['name']
 
-            audio_feature = next((feature for feature in audio_features if feature['id'] == song_id), None)
+            # for track in tracks_features['tracks']:
+            #     print(track['album']['name'])
+            #     print(track['artists'][0]['name'])
 
+            
+            track_feature = next((track for track in tracks_features['tracks'] if track['id'] == song_id), None)
+            audio_feature = next((feature for feature in audio_features if feature['id'] == song_id), None)
+            
             if audio_feature:
                 track_info[song_id] = {
                     'song_name' : song_name,
                     'song_id' : song_id,
+                    'artist_name' : track_feature['artists'][0]['name'],
+                    'album_name' : track_feature['album']['name'],
                     'acousticness' : audio_feature['acousticness'],
                     'danceability' : audio_feature['danceability'],
                     'duration_ms' : audio_feature['duration_ms'],
@@ -158,6 +172,8 @@ def recent_25_features_to_db():
             new_song = AudioAnalysis(
                         song_id = track_info[track]['song_id'],
                         song_name = track_info[track]['song_name'],
+                        artist_name = track_info[track]['artist_name'],
+                        album_name = track_info[track]['album_name'],
                         duration_ms = track_info[track]['duration_ms'],
                         acousticness = track_info[track]['acousticness'],
                         danceability = track_info[track]['danceability'],
@@ -168,11 +184,19 @@ def recent_25_features_to_db():
                         loudness = track_info[track]['loudness'],
                         speechiness = track_info[track]['speechiness'],
                         tempo = track_info[track]['tempo'],
-                        time_signature = track_info[track]['time_signature']
+                        time_signature = track_info[track]['time_signature'],
+                        currently_playing = False
                     )
-
-            session.add(new_song)
-            session.commit()
+            try:
+                session.add(new_song)
+                session.commit()
+            
+            except IntegrityError as e:
+                session.rollback()
+                print(f"IntegrityError: {e}")
+            finally:
+                session.close()
+                return str('Some songs are already in the db')
 
         return str('Added songs to db')
 
@@ -286,6 +310,32 @@ def GetTrackInfo():
         time.sleep(10)
         print('Nothing is currently playing')
         return redirect(url_for('GetTrackInfo', _external = True))
+
+@app.route('/AlbumsWorthListeingTo')
+def albums_worth_listening_to():
+    try:
+        token_info = get_token()
+    except:
+        print('User not logged in')
+        return redirect('/')
+    
+    
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    # Store the ids for the users top 50 artists
+    top_50_artist_ids = []
+    top_50_artists = sp.current_user_top_artists(limit=50, offset=0, time_range='medium_term')
+    for id in top_50_artists['items']:
+        top_50_artist_ids.append(id['id'])
+    
+    #for each artist id store their top 2 albums
+    albums_worth_listening_to = {}
+    for artist in top_50_artist_ids:
+        albums = sp.artist_albums(artist, album_type='album', limit=2)
+        for album in albums['items']:
+            albums_worth_listening_to[album['artists'][0]['name']] = album['name']
+        
+
+    return albums_worth_listening_to
 
 def get_token():
     

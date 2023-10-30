@@ -1,7 +1,9 @@
 from flask import session
 from flask_restful import reqparse, fields, marshal_with, Resource
+from sqlalchemy import func
 from app import app, api, db, Session
 from models import *
+import random
 
 song_put_args = reqparse.RequestParser()
 song_put_args.add_argument("song_id", type = str, help = "spotify song id")
@@ -23,6 +25,8 @@ resource_fields = {
 analysis_fields = {
     'song_id' : fields.String,
     'song_name' : fields.String,
+    'artist_name' : fields.String,
+    'album_name' : fields.String,
     'acousticness' : fields.Float,
     'danceability' : fields.Float,
     'duration_ms' :  fields.Float,
@@ -80,9 +84,11 @@ class get_25_recent_song_features(Resource):
         session = Session()
         with app.app_context():
                 with db.session() as session:
-                    result = AudioAnalysis.query.all()
+                    result = AudioAnalysis.query.order_by(func.random()).limit(5).all()
+                    
                 session.close()
         return result
+    
 # here we add an endpoints for the song class
 api.add_resource(add_song, "/song/add/")
 api.add_resource(get_song, "/song/info/<string:song_id>")
